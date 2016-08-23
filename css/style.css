@@ -1,0 +1,22 @@
+.table-wrapper {
+    position:relative;
+}
+.table-scroll {
+    height:400px;
+    overflow:auto;
+}
+.table-wrapper table {
+    width:100%;
+}
+
+.POSITIVE {
+    color: #1b9e77;
+}
+
+.NEGATIVE {
+    color: #d95f02;
+}
+
+.NEUTRAL {
+    color: #7570b3;
+}

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="twitterSentimentClient" ng-controller="TwitterSentimentClientCtrl">
+<head>
+    <meta charset="UTF-8">
+    <title>Twitter Sentiment Analysis - Client</title>
+
+    <link href="../css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+    <link href="../css/dc.css" type="text/css" rel="stylesheet"/>
+    <link href="../css/style.css" type="text/css" rel="stylesheet"/>
+
+    <script type="text/javascript" src="../js/angular.min.js"></script>
+    <script type="text/javascript" src="../js/twitter-sentiment-client.module.js"></script>
+    <script type="text/javascript" src="../js/twitter-sentiment-client.controller.js"></script>
+    <script type="text/javascript" src="../js/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="../js/materialize.min.js"></script>
+    <script type="text/javascript" src="../js/mask.min.js"></script>
+    <script type="text/javascript" src="../js/d3.js"></script>
+    <script type="text/javascript" src="../js/crossfilter.js"></script>
+    <script type="text/javascript" src="../js/dc.js"></script>
+</head>
+<body>
+<header>
+    <div class="navbar-fixed">
+        <nav>
+            <div class="nav-wrapper  blue-grey darken-3">
+                <span class="brand-logo center light">Twitter Sentiment Analysis - Olympics2016</span>
+            </div>
+        </nav>
+    </div>
+</header>
+<div class="container">
+    <div class="row">
+        <h5 class="light">Query parameters</h5>
+    </div>
+    <div class="row">
+        <div class="input-field col s12 m4">
+            <input type="text" id="startDate"  placeholder="yyyy-MM-ddThh:mm:ss" ng-model="query.startDate" ui-mask="9999-99-99T99:99:99" model-view-value="true" />
+            <label for="startDate" class="active">Start Date</label>
+        </div>
+        <div class="input-field col s12 m4">
+            <input type="text" id="endDate" placeholder="yyyy-MM-ddThh:mm:ss" ng-model="query.endDate" ui-mask="9999-99-99T99:99:99" model-view-value="true" />
+            <label for="endDate" class="active">End Date</label>
+        </div>
+    </div>
+    <div class="row">
+        <div class="input-field col s12 m4">
+            <input type="text" id="text" placeholder="e.g. bolt medal phelps usa" ng-model="query.text" />
+            <label for="text" class="active">Filter tweets containing word(s)</label>
+        </div>
+        <div class="input-field col s12 m2">
+            <label class="active">Filter Operator</label>
+            <input type="radio" id="or" name="group1" ng-model="query.operator" value="or" />
+            <label for="or">OR</label>
+            <br/>
+            <input type="radio" id="and" name="group1" ng-model="query.operator" value="and" />
+            <label for="and">AND</label>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col s12 m8">
+            <a ng-show="!waitMessage" class="btn waves-effect waves-light green accent-2 black-text light" ng-click="performSentimentAnalysis()" >
+                Perform Sentiment Analysis
+            </a>
+            <h6 class="light" ng-show="waitMessage">{{waitMessage}}</h6>
+        </div>
+    </div>
+    <div class="row" ng-show="dailyTrendTopics">
+        <div class="col s12">
+            <div id="tweets-chart">
+                <h4 class="light">Tweets Sentiment</h4>
+            </div>
+        </div>
+    </div>
+    <div class="row" ng-show="dailyTrendTopics">
+        <div class="col s12 m6">
+            <h4 class="light">Daily Trend Topics</h4>
+            <div class="table-wrapper">
+                <div class="table-scroll">
+                    <table class="light">
+                        <thead>
+                        <tr>
+                            <th data-field="daily-hashtag">Hashtag</th>
+                            <th data-field="day"><a href="" ng-click="sortDailyTrendTopicsBy('day')">Day</a></th>
+                            <th data-field="daily-total"><a href="" ng-click="sortDailyTrendTopicsBy('total')">Total</a></th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr ng-repeat="topic in dailyTrendTopics | orderBy:dailyPropertyName:dailyReverse">
+                            <td class="{{getMainSentiment(topic.sentimentCounts)}}">{{topic.hashtag}}</td>
+                            <td>{{topic.day | date:'EEE, MMM d, y'}}</td>
+                            <td>{{topic.total}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m6">
+            <h4 class="light">Hourly Trend Topics</h4>
+            <div class="table-wrapper">
+                <div class="table-scroll">
+                    <table class="light">
+                        <thead>
+                        <tr>
+                            <th data-field="hourly-hashtag">Hashtag</th>
+                            <th data-field="hour"><a href="" ng-click="sortHourlyTrendTopicsBy('hour')">Hour</a></th>
+                            <th data-field="hourly-total"><a href="" ng-click="sortHourlyTrendTopicsBy('total')">Total</a></th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr ng-repeat="topic in hourlyTrendTopics | orderBy:hourlyPropertyName:hourlyReverse">
+                            <td class="{{getMainSentiment(topic.sentimentCounts)}}">{{topic.hashtag}}</td>
+                            <td>{{topic.hour | date:'EEE, MMM d, y h a'}}</td>
+                            <td>{{topic.total}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row" ng-show="tweetsWithSentiment">
+        <div class="col s12">
+            <h4 class="light">Tweets: {{tweetsWithSentiment.length}}</h4>
+            <div class="table-wrapper">
+                <div class="table-scroll">
+                    <table class="light">
+                        <tbody>
+                        <tr ng-repeat="tweet in tweetsWithSentiment | orderBy:'dateTime'">
+                            <td class="{{tweet.sentiment}}">{{tweet.text}}</td>
+                            <td>{{tweet.dateTime | date:'EEE, MMM d, y h a'}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
